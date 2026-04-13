@@ -19,7 +19,7 @@ import * as THREE from 'three/webgpu'
 import { OrbitControls } from 'three/addons/controls/OrbitControls'
 
 import { useGSAP } from '@/composables/useGSAP'
-import { WallMaterial } from '@/assets/materials/WallMaterial'
+import { WallMaterial, videoTexture } from '@/assets/materials/WallMaterial'
 
 const canvasRef = useTemplateRef('canvas')
 let perfPanel, scene, camera, renderer, mesh, controls
@@ -38,8 +38,10 @@ onMounted(async () => {
 
 	createScene()
 	createCamera()
+
 	await createRenderer()
 
+	createVideo()
 	createWall()
 	createControls()
 
@@ -130,6 +132,21 @@ function createControls() {
 	controls = new OrbitControls(camera, renderer.domElement)
 	controls.target.set(0, 1, 0)
 	controls.enableDamping = true
+}
+
+function createVideo() {
+	const video = document.createElement('video')
+	video.src = '/video.mp4'
+	video.autoplay = true
+	video.muted = true
+	video.loop = true
+
+	video.play()
+
+	const texture = new THREE.VideoTexture(video)
+	texture.colorSpace = THREE.SRGBColorSpace
+
+	videoTexture.value = texture
 }
 
 function createWall() {
