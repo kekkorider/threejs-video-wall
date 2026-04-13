@@ -145,6 +145,7 @@ function createVideo() {
 
 	const texture = new THREE.VideoTexture(video)
 	texture.colorSpace = THREE.SRGBColorSpace
+	texture.wrapS = texture.wrapT = THREE.MirroredRepeatWrapping
 
 	videoTexture.value = texture
 }
