@@ -1,4 +1,4 @@
-import { Fn, uv, positionLocal, uniform, texture, instanceIndex, mul, div, int, float, ceil, mod, vec2 } from 'three/tsl'
+import { Fn, uv, positionLocal, uniform, texture, instanceIndex, div, int, float, floor, mod, vec2 } from 'three/tsl'
 import { MeshBasicNodeMaterial, DataTexture, RGBAFormat } from 'three/webgpu'
 
 const dummyTexture = new DataTexture(
@@ -18,17 +18,22 @@ export const scale = uniform(1)
 const videoUV = Fn(() => {
   const instancesPerStory = float(64)
   const totalPlanes = int(4)
-  const totalStories = int(8)
+  const totalStories = int(7)
 
   const instancesPerPlaneX = div(instancesPerStory, totalPlanes)
 
-  const currentStory = ceil(div(float(instanceIndex), instancesPerStory))
+  const currentStory = floor(div(float(instanceIndex), instancesPerStory))
   const currentInstancePerStory = mod(float(instanceIndex), instancesPerStory)
 
   const x = div(mod(currentInstancePerStory, instancesPerPlaneX), instancesPerPlaneX)
   const y = div(currentStory, totalStories)
 
-  return vec2(x, y)
+  const uvOffsetX = x
+  const uvCellX = uv().x.div(instancesPerPlaneX).add(uvOffsetX)
+  const uvOffsetY = y
+  const uvCellY = uv().y.div(totalStories).add(uvOffsetY)
+
+  return vec2(uvCellX, uvCellY)
 })
 
 WallMaterial.positionNode = Fn(() => {
@@ -40,6 +45,8 @@ WallMaterial.uvNode = Fn(() => {
 })()
 
 WallMaterial.colorNode = Fn(() => {
+  // return videoUV().toVec3()
+
   const text0 = texture(videoTexture.value, videoUV())
   return text0
 })()

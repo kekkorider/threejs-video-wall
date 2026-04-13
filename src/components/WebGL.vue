@@ -105,7 +105,7 @@ function createCamera() {
 		100,
 	)
 
-	camera.position.set(0, 1, 4)
+	camera.position.set(0, 1.5, 4)
 }
 
 async function createRenderer() {
@@ -130,7 +130,7 @@ async function createRenderer() {
 
 function createControls() {
 	controls = new OrbitControls(camera, renderer.domElement)
-	controls.target.set(0, 1, 0)
+	controls.target.set(0, 1.5, 0)
 	controls.enableDamping = true
 }
 
