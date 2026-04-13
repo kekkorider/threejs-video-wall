@@ -103,7 +103,7 @@ function createCamera() {
 		100,
 	)
 
-	camera.position.set(0, 0, 4)
+	camera.position.set(0, 1, 4)
 }
 
 async function createRenderer() {
@@ -128,15 +128,17 @@ async function createRenderer() {
 
 function createControls() {
 	controls = new OrbitControls(camera, renderer.domElement)
+	controls.target.set(0, 1, 0)
 	controls.enableDamping = true
 }
 
 function createWall() {
 	const geometry = new THREE.BoxGeometry()
+	geometry.scale(0.6, 0.6, 0.6)
 	const material = WallMaterial
 
-	const stories = 5
-	const meshesPerStory = 30
+	const stories = 7
+	const meshesPerStory = 64
 	const count = stories * meshesPerStory
 	const gap = (Math.PI * 2) / meshesPerStory
 
@@ -149,7 +151,7 @@ function createWall() {
 		for (j = 0; j < meshesPerStory; j++) {
 			const position = new THREE.Vector3(
 				Math.cos(gap * j) * 7,
-				i,
+				i * 0.65,
 				Math.sin(gap * j) * 7,
 			)
 

@@ -4,7 +4,7 @@ import { MeshBasicNodeMaterial } from 'three/webgpu'
 export const WallMaterial = new MeshBasicNodeMaterial()
 WallMaterial.name = 'Wall material'
 
-export const scale = uniform(0.96)
+export const scale = uniform(1)
 
 WallMaterial.positionNode = Fn(() => {
   return positionLocal.mul(scale)
