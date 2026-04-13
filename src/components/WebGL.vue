@@ -19,8 +19,7 @@ import * as THREE from 'three/webgpu'
 import { OrbitControls } from 'three/addons/controls/OrbitControls'
 
 import { useGSAP } from '@/composables/useGSAP'
-import { SampleTSLMaterial } from '@/assets/materials'
-import { gltfLoader } from '@/assets/loaders'
+import { WallMaterial } from '@/assets/materials/WallMaterial'
 
 const canvasRef = useTemplateRef('canvas')
 let perfPanel, scene, camera, renderer, mesh, controls
@@ -41,10 +40,7 @@ onMounted(async () => {
 	createCamera()
 	await createRenderer()
 
-	createMesh()
-
-	await loadModel()
-
+	createWall()
 	createControls()
 
 	gsap.ticker.fps(60)
@@ -93,7 +89,6 @@ watch([windowWidth, windowHeight], value => {
 //
 function updateScene(time = 0) {
 	controls?.update()
-	mesh.rotation.set(time * 0.2, time * 0.13, time * 0.17)
 }
 
 function createScene() {
@@ -131,27 +126,50 @@ async function createRenderer() {
 	await renderer.init()
 }
 
-async function loadModel() {
-	const gltf = await gltfLoader.load('/monkey.glb')
-	const model = gltf.scene.getObjectByName('Suzanne')
-
-	model.material = SampleTSLMaterial
-	model.position.x = 1
-
-	scene.add(model)
-}
-
 function createControls() {
 	controls = new OrbitControls(camera, renderer.domElement)
 	controls.enableDamping = true
 }
 
-function createMesh() {
+function createWall() {
 	const geometry = new THREE.BoxGeometry()
-	const material = SampleTSLMaterial
+	const material = WallMaterial
 
-	mesh = new THREE.Mesh(geometry, material)
-	mesh.position.x = -1
+	const stories = 5
+	const meshesPerStory = 30
+	const count = stories * meshesPerStory
+	const gap = (Math.PI * 2) / meshesPerStory
+
+	mesh = new THREE.InstancedMesh(geometry, material, count)
+
+	const dummyMatrix = new THREE.Matrix4()
+
+	let i, j
+	for (i = 0; i < stories; i++) {
+		for (j = 0; j < meshesPerStory; j++) {
+			const position = new THREE.Vector3(
+				Math.cos(gap * j) * 7,
+				i,
+				Math.sin(gap * j) * 7,
+			)
+
+			const rotation = new THREE.Quaternion().setFromAxisAngle(
+				new THREE.Vector3(0, 1, 0),
+				-gap * j,
+			)
+
+			const scale = new THREE.Vector3(1, 1, 1)
+
+			const instanceMatrix = dummyMatrix.clone()
+			instanceMatrix.compose(position, rotation, scale)
+
+			mesh.setMatrixAt(i * meshesPerStory + j, instanceMatrix)
+		}
+	}
+
+	mesh.instanceMatrix.needsUpdate = true
+
+	mesh.name = 'Wall mesh'
 
 	scene.add(mesh)
 }

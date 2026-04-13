@@ -1,6 +1,6 @@
 import { Pane } from 'tweakpane'
 
-import { scale } from '@/assets/materials/SampleTSLMaterial'
+import { scale } from '@/assets/materials/WallMaterial'
 
 const pane = new Pane({
   container: document.getElementById('tweakpane-container'),
