@@ -1,4 +1,20 @@
-import { Fn, If, uv, positionLocal, uniform, texture, instanceIndex, div, int, float, floor, mod, vec2, time } from 'three/tsl'
+import {
+  Fn,
+  If,
+  uv,
+  uniform,
+  texture,
+  instanceIndex,
+  div,
+  int,
+  float,
+  floor,
+  mod,
+  vec2,
+  vec3,
+  time,
+  luminance
+} from 'three/tsl'
 import { MeshBasicNodeMaterial, DataTexture, RGBAFormat } from 'three/webgpu'
 
 const dummyTexture = new DataTexture(
@@ -15,13 +31,12 @@ WallMaterial.name = 'Wall material'
 
 export const scale = uniform(1)
 
-const videoUV = Fn(() => {
-  const instancesPerStory = float(64)
-  const totalPlanes = int(4)
-  const totalStories = int(7)
+const instancesPerStory = float(64)
+const totalPlanes = int(4)
+const totalStories = int(7)
+const instancesPerPlaneX = div(instancesPerStory, totalPlanes)
 
-  const instancesPerPlaneX = div(instancesPerStory, totalPlanes)
-
+const sampleTexture = Fn(() => {
   const currentStory = floor(div(float(instanceIndex), instancesPerStory))
   const currentPlane = floor(div(float(instanceIndex), instancesPerPlaneX))
   const currentInstancePerStory = mod(float(instanceIndex), instancesPerStory)
@@ -31,21 +46,24 @@ const videoUV = Fn(() => {
 
   x.addAssign(time.mul(0.1))
 
-  const uvOffsetX = x
+  return vec3(x, y, currentPlane)
+})
+
+const videoUV = Fn(() => {
+  const sample = sampleTexture()
+
+  const uvOffsetX = sample.x
   const uvCellX = uv().x.div(instancesPerPlaneX).add(uvOffsetX)
-  If(float(currentPlane).mod(2).equal(0), () => {
+
+  If(float(sample.z).mod(2).equal(0), () => {
     uvCellX.oneMinusAssign()
   })
 
-  const uvOffsetY = y
+  const uvOffsetY = sample.y
   const uvCellY = uv().y.div(totalStories).add(uvOffsetY)
 
   return vec2(uvCellX, uvCellY)
 })
-
-WallMaterial.positionNode = Fn(() => {
-  return positionLocal.mul(scale)
-})()
 
 WallMaterial.uvNode = Fn(() => {
   return videoUV()
@@ -54,6 +72,6 @@ WallMaterial.uvNode = Fn(() => {
 WallMaterial.colorNode = Fn(() => {
   // return videoUV().toVec3()
 
-  const text0 = texture(videoTexture.value, videoUV())
-  return text0
+  const tex0 = texture(videoTexture.value, videoUV())
+  return tex0
 })()
