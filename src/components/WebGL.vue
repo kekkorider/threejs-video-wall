@@ -105,7 +105,7 @@ function createCamera() {
 		100,
 	)
 
-	camera.position.set(0, 1.5, 4)
+	camera.position.set(0, 2, 2)
 }
 
 async function createRenderer() {
@@ -130,8 +130,10 @@ async function createRenderer() {
 
 function createControls() {
 	controls = new OrbitControls(camera, renderer.domElement)
-	controls.target.set(0, 1.5, 0)
+	controls.target.set(0, 2, 0)
 	controls.enableDamping = true
+	controls.minPolarAngle = Math.PI / 2
+	controls.maxPolarAngle = Math.PI / 2
 }
 
 function createVideo() {

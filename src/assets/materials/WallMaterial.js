@@ -1,4 +1,4 @@
-import { Fn, uv, positionLocal, uniform, texture, instanceIndex, div, int, float, floor, mod, vec2 } from 'three/tsl'
+import { Fn, If, uv, positionLocal, uniform, texture, instanceIndex, div, int, float, floor, mod, vec2, time } from 'three/tsl'
 import { MeshBasicNodeMaterial, DataTexture, RGBAFormat } from 'three/webgpu'
 
 const dummyTexture = new DataTexture(
@@ -23,13 +23,20 @@ const videoUV = Fn(() => {
   const instancesPerPlaneX = div(instancesPerStory, totalPlanes)
 
   const currentStory = floor(div(float(instanceIndex), instancesPerStory))
+  const currentPlane = floor(div(float(instanceIndex), instancesPerPlaneX))
   const currentInstancePerStory = mod(float(instanceIndex), instancesPerStory)
 
   const x = div(mod(currentInstancePerStory, instancesPerPlaneX), instancesPerPlaneX)
   const y = div(currentStory, totalStories)
 
+  x.addAssign(time.mul(0.1))
+
   const uvOffsetX = x
   const uvCellX = uv().x.div(instancesPerPlaneX).add(uvOffsetX)
+  If(float(currentPlane).mod(2).equal(0), () => {
+    uvCellX.oneMinusAssign()
+  })
+
   const uvOffsetY = y
   const uvCellY = uv().y.div(totalStories).add(uvOffsetY)
 
