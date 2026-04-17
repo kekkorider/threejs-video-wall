@@ -20,9 +20,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls'
 
 import { useGSAP } from '@/composables/useGSAP'
 import { WallMaterial, videoTexture } from '@/assets/materials/WallMaterial'
+import { WaterMesh } from '@/assets/WaterMesh'
+import { textureLoader } from '@/assets/loaders'
 
 const canvasRef = useTemplateRef('canvas')
-let perfPanel, scene, camera, renderer, mesh, controls
+let perfPanel, scene, camera, renderer, mesh, controls, floorMesh, ceilingMesh
+
+const textures = new Map()
 
 const { width: windowWidth, height: windowHeight } = useWindowSize()
 const { pixelRatio: dpr } = useDevicePixelRatio()
@@ -40,9 +44,11 @@ onMounted(async () => {
 	createCamera()
 
 	await createRenderer()
+	await loadTextures()
 
 	createVideo()
 	createWall()
+	createFloor()
 	createControls()
 
 	gsap.ticker.fps(60)
@@ -128,6 +134,19 @@ async function createRenderer() {
 	await renderer.init()
 }
 
+async function loadTextures() {
+	const result = await textureLoader.load([
+		'/Water_1_M_Normal.jpg',
+		'/Water_2_M_Normal.jpg',
+	])
+
+	result[0].wrapS = result[0].wrapT = THREE.RepeatWrapping
+	result[1].wrapS = result[1].wrapT = THREE.RepeatWrapping
+
+	textures.set('waterNormalMap0', result[0])
+	textures.set('waterNormalMap1', result[1])
+}
+
 function createControls() {
 	controls = new OrbitControls(camera, renderer.domElement)
 	controls.target.set(0, 2, 0)
@@ -140,7 +159,7 @@ function createVideo() {
 	const video = document.createElement('video')
 	video.src = '/video.mp4'
 	video.autoplay = true
-	video.muted = true
+	video.muted = false
 	video.loop = true
 
 	video.play()
@@ -179,14 +198,13 @@ function createWall() {
 				Math.sin(gap * j) * 7,
 			)
 
-			const rotation = new THREE.Quaternion().setFromAxisAngle(
-				yAxis,
-				-gap * j,
-			)
+			const rotation = new THREE.Quaternion().setFromAxisAngle(yAxis, -gap * j)
 
 			// Direction away from world center, converted into this instance local space.
 			directionWorld.set(position.x, 0, position.z).normalize()
-			directionLocal.copy(directionWorld).applyQuaternion(rotation.clone().invert())
+			directionLocal
+				.copy(directionWorld)
+				.applyQuaternion(rotation.clone().invert())
 			directionLocalArray[(i * meshesPerStory + j) * 2 + 0] = directionLocal.x
 			directionLocalArray[(i * meshesPerStory + j) * 2 + 1] = directionLocal.z
 
@@ -208,6 +226,34 @@ function createWall() {
 	mesh.name = 'Wall mesh'
 
 	scene.add(mesh)
+}
+
+function createFloor() {
+	const geometry = new THREE.CircleGeometry(7.5, 64)
+
+	floorMesh = new WaterMesh(geometry, {
+		color: 0xffffff,
+		flowDirection: new THREE.Vector2(1, 0),
+		normalMap0: textures.get('waterNormalMap0'),
+		normalMap1: textures.get('waterNormalMap1'),
+	})
+
+	floorMesh.rotation.x = -Math.PI / 2
+	floorMesh.renderOrder = 10
+
+	ceilingMesh = new WaterMesh(geometry, {
+		color: 0xffffff,
+		flowDirection: new THREE.Vector2(-0.3, 0.7),
+		normalMap0: textures.get('waterNormalMap1'),
+		normalMap1: textures.get('waterNormalMap0'),
+	})
+
+	ceilingMesh.rotation.x = Math.PI / 2
+	ceilingMesh.renderOrder = 10
+	ceilingMesh.position.y = 3.7
+
+	scene.add(floorMesh)
+	scene.add(ceilingMesh)
 }
 </script>
 
