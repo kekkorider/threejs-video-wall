@@ -132,8 +132,8 @@ function createControls() {
 	controls = new OrbitControls(camera, renderer.domElement)
 	controls.target.set(0, 2, 0)
 	controls.enableDamping = true
-	controls.minPolarAngle = Math.PI / 2
-	controls.maxPolarAngle = Math.PI / 2
+	// controls.minPolarAngle = Math.PI / 2
+	// controls.maxPolarAngle = Math.PI / 2
 }
 
 function createVideo() {
@@ -165,6 +165,10 @@ function createWall() {
 	mesh = new THREE.InstancedMesh(geometry, material, count)
 
 	const dummyMatrix = new THREE.Matrix4()
+	const directionLocalArray = new Float32Array(count * 2)
+	const yAxis = new THREE.Vector3(0, 1, 0)
+	const directionWorld = new THREE.Vector3()
+	const directionLocal = new THREE.Vector3()
 
 	let i, j
 	for (i = 0; i < stories; i++) {
@@ -176,9 +180,15 @@ function createWall() {
 			)
 
 			const rotation = new THREE.Quaternion().setFromAxisAngle(
-				new THREE.Vector3(0, 1, 0),
+				yAxis,
 				-gap * j,
 			)
+
+			// Direction away from world center, converted into this instance local space.
+			directionWorld.set(position.x, 0, position.z).normalize()
+			directionLocal.copy(directionWorld).applyQuaternion(rotation.clone().invert())
+			directionLocalArray[(i * meshesPerStory + j) * 2 + 0] = directionLocal.x
+			directionLocalArray[(i * meshesPerStory + j) * 2 + 1] = directionLocal.z
 
 			const scale = new THREE.Vector3(1, 1, 1)
 
@@ -190,6 +200,10 @@ function createWall() {
 	}
 
 	mesh.instanceMatrix.needsUpdate = true
+	mesh.geometry.setAttribute(
+		'instanceDirectionLocal',
+		new THREE.InstancedBufferAttribute(directionLocalArray, 2),
+	)
 
 	mesh.name = 'Wall mesh'
 

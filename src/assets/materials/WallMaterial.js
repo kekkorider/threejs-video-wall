@@ -15,7 +15,8 @@ import {
   vec3,
   time,
   luminance,
-  positionLocal
+  positionLocal,
+  attribute
 } from 'three/tsl'
 import { MeshBasicNodeMaterial, DataTexture, RGBAFormat } from 'three/webgpu'
 
@@ -87,8 +88,15 @@ WallMaterial.colorNode = Fn(() => {
 })()
 
 WallMaterial.positionNode = Fn(() => {
-  const base = vec3(0.8)
-  const scale = getScale().mul(0.15)
-  return positionLocal.mulAssign(add(base, scale))
+  const pos = positionLocal.toVar()
+
+  const base = vec3(0.7)
+  const scale = getScale()
+  pos.mulAssign(add(base, scale.mul(0.3)))
+
+  const dirLocal = attribute('instanceDirectionLocal').toVec2()
+  pos.xz.subAssign(dirLocal.mul(scale.mul(0.4)))
+
+  return pos
 })()
 
