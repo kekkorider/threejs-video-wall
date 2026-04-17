@@ -5,6 +5,7 @@ import {
   uniform,
   texture,
   instanceIndex,
+  add,
   div,
   int,
   float,
@@ -13,7 +14,8 @@ import {
   vec2,
   vec3,
   time,
-  luminance
+  luminance,
+  positionLocal
 } from 'three/tsl'
 import { MeshBasicNodeMaterial, DataTexture, RGBAFormat } from 'three/webgpu'
 
@@ -65,13 +67,28 @@ const videoUV = Fn(() => {
   return vec2(uvCellX, uvCellY)
 })
 
+const getScale = Fn(() => {
+  const sample = sampleTexture()
+  const tex0 = texture(videoTexture.value, sample.xy.toVec2())
+  const lum = luminance(tex0.xyz.toVec3(), 0.8)
+
+  return lum
+})
+
 WallMaterial.uvNode = Fn(() => {
   return videoUV()
 })()
 
 WallMaterial.colorNode = Fn(() => {
-  // return videoUV().toVec3()
+  // return sampleTexture().xy.toVec2()
+  // return getScale()
 
-  const tex0 = texture(videoTexture.value, videoUV())
-  return tex0
+  return texture(videoTexture.value, videoUV())
 })()
+
+WallMaterial.positionNode = Fn(() => {
+  const base = vec3(0.8)
+  const scale = getScale().mul(0.15)
+  return positionLocal.mulAssign(add(base, scale))
+})()
+
