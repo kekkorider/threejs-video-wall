@@ -8,7 +8,7 @@
 </template>
 
 <script setup>
-import { useTemplateRef, onMounted, nextTick, watch } from 'vue'
+import { useTemplateRef, onMounted, nextTick, watch, shallowRef } from 'vue'
 import {
 	useWindowSize,
 	useDevicePixelRatio,
@@ -23,8 +23,27 @@ import { WallMaterial, videoTexture } from '@/assets/materials/WallMaterial'
 import { WaterMesh } from '@/assets/WaterMesh'
 import { textureLoader } from '@/assets/loaders'
 
+import { EVENTS } from '@/constants'
+
 const canvasRef = useTemplateRef('canvas')
-let perfPanel, scene, camera, renderer, mesh, controls, floorMesh, ceilingMesh
+let perfPanel,
+	scene,
+	camera,
+	renderer,
+	mesh,
+	controls,
+	floorMesh,
+	ceilingMesh,
+	video
+
+const cameraStartPos = new THREE.Vector3(0, 28, 0)
+const cameraFinalPos = new THREE.Vector3(0, 2, 2)
+
+const cameraTargetStartPos = new THREE.Vector3(0, 0, 0)
+const cameraTargetFinalPos = new THREE.Vector3(0, 2, -2)
+const cameraTarget = cameraTargetStartPos.clone()
+
+const isDebug = shallowRef(false)
 
 const textures = new Map()
 
@@ -40,6 +59,8 @@ const { gsap } = useGSAP()
 onMounted(async () => {
 	await nextTick()
 
+	isDebug.value = Object.hasOwn(params, 'debug')
+
 	createScene()
 	createCamera()
 
@@ -49,7 +70,7 @@ onMounted(async () => {
 	createVideo()
 	createWall()
 	createFloor()
-	createControls()
+	isDebug.value && createControls()
 
 	gsap.ticker.fps(60)
 
@@ -62,7 +83,7 @@ onMounted(async () => {
 		perfPanel?.end()
 	})
 
-	if (Object.hasOwn(params, 'debug')) {
+	if (isDebug.value) {
 		await import('@/assets/Debug')
 
 		if (!renderer.isWebGPURenderer) {
@@ -76,6 +97,14 @@ onMounted(async () => {
 			})
 		}
 	}
+
+	window.addEventListener(
+		EVENTS.ANIMATE_IN,
+		() => {
+			animateIn()
+		},
+		{ once: true },
+	)
 })
 
 //
@@ -97,6 +126,8 @@ watch([windowWidth, windowHeight], value => {
 //
 function updateScene(time = 0) {
 	controls?.update()
+
+	!isDebug.value && camera.lookAt(cameraTarget)
 }
 
 function createScene() {
@@ -111,7 +142,11 @@ function createCamera() {
 		100,
 	)
 
-	camera.position.set(0, 2, 2)
+	if (isDebug.value) {
+		camera.position.copy(cameraFinalPos)
+	} else {
+		camera.position.copy(cameraStartPos)
+	}
 }
 
 async function createRenderer() {
@@ -149,17 +184,17 @@ async function loadTextures() {
 
 function createControls() {
 	controls = new OrbitControls(camera, renderer.domElement)
-	controls.target.set(0, 2, 0)
+	controls.target.set(cameraTargetFinalPos)
 	controls.enableDamping = true
-	// controls.minPolarAngle = Math.PI / 2
-	// controls.maxPolarAngle = Math.PI / 2
+	controls.minPolarAngle = Math.PI / 2
+	controls.maxPolarAngle = Math.PI / 2
 }
 
 function createVideo() {
-	const video = document.createElement('video')
+	video = document.createElement('video')
 	video.src = '/video.mp4'
 	video.autoplay = false
-	video.muted = true
+	video.muted = false
 	video.loop = true
 
 	// video.play()
@@ -236,6 +271,7 @@ function createWall() {
 	)
 
 	mesh.name = 'Wall mesh'
+	mesh.rotation.y = Math.PI * 0.25
 
 	scene.add(mesh)
 }
@@ -266,6 +302,48 @@ function createFloor() {
 
 	scene.add(floorMesh)
 	scene.add(ceilingMesh)
+}
+
+function animateIn() {
+	const tl = gsap.timeline()
+	tl.addLabel('start')
+
+	tl.fromTo(
+		camera.position,
+		{
+			x: cameraStartPos.x,
+			y: cameraStartPos.y,
+			z: cameraStartPos.z,
+		},
+		{
+			x: cameraFinalPos.x,
+			y: cameraFinalPos.y,
+			z: cameraFinalPos.z,
+			duration: 5,
+			ease: 'power2.inOut',
+		},
+		'start',
+	)
+
+	tl.fromTo(
+		cameraTarget,
+		{
+			x: cameraTargetStartPos.x,
+			y: cameraTargetStartPos.y,
+			z: cameraTargetStartPos.z,
+		},
+		{
+			x: cameraTargetFinalPos.x,
+			y: cameraTargetFinalPos.y,
+			z: cameraTargetFinalPos.z,
+			duration: 1.7,
+			ease: 'power2.inOut',
+			onStart: () => {
+				video.play()
+			},
+		},
+		'start+=2',
+	)
 }
 </script>
 

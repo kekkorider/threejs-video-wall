@@ -132,7 +132,7 @@ WallMaterial.positionNode = Fn(() => {
 
   const base = vec3(0.8)
   const scale = mx_noise_vec3(instancePositionWorld.mul(0.5).add(time.mul(0.3)), 1)
-  pos.mulAssign(add(base, scale.xxx.mul(0.2)))
+  pos.mulAssign(add(base, scale.xxx.mul(0.7)))
 
   // Local-space orbit delta around world center, built from radial+tangent basis.
   const orbitDelta = dirLocal
