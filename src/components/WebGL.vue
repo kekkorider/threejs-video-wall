@@ -122,7 +122,7 @@ async function createRenderer() {
 		powerPreference: 'high-performance',
 	})
 
-	renderer.setClearColor(0x121212, 1)
+	renderer.setClearColor(0x010101, 1)
 	renderer.setSize(get(windowWidth), get(windowHeight))
 
 	if (Object.hasOwn(params, 'debug')) {
@@ -158,11 +158,11 @@ function createControls() {
 function createVideo() {
 	const video = document.createElement('video')
 	video.src = '/video.mp4'
-	video.autoplay = true
+	video.autoplay = false
 	video.muted = true
 	video.loop = true
 
-	video.play()
+	// video.play()
 
 	const texture = new THREE.VideoTexture(video)
 	texture.colorSpace = THREE.SRGBColorSpace
