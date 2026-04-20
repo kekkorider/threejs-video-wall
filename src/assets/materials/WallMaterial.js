@@ -17,7 +17,8 @@ import {
   luminance,
   positionLocal,
   attribute,
-  mx_noise_vec3
+  mx_noise_vec3,
+  hash
 } from 'three/tsl'
 import { MeshBasicNodeMaterial, DataTexture, RGBAFormat } from 'three/webgpu'
 
@@ -48,7 +49,8 @@ const sampleTexture = Fn(() => {
   const x = div(mod(currentInstancePerStory, instancesPerPlaneX), instancesPerPlaneX)
   const y = div(currentStory, totalStories)
 
-  x.addAssign(time.mul(0.1))
+  const direction = getMovementDirection(currentStory)
+  x.addAssign(direction.mul(time))
 
   return vec3(x, y, currentPlane)
 })
@@ -67,6 +69,13 @@ const videoUV = Fn(() => {
   const uvCellY = uv().y.div(totalStories).add(uvOffsetY)
 
   return vec2(uvCellX, uvCellY)
+})
+
+const getMovementDirection = Fn(([currentStory]) => {
+  const direction = hash(currentStory.add(358)).clamp(0.2, 0.8)
+  direction.remapAssign(0, 1, -1, 1)
+
+  return direction
 })
 
 const getScale = Fn(() => {
