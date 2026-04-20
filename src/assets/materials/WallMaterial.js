@@ -1,6 +1,8 @@
 import {
   Fn,
   If,
+  cos,
+  sin,
   uv,
   uniform,
   texture,
@@ -18,7 +20,9 @@ import {
   positionLocal,
   attribute,
   mx_noise_vec3,
-  hash
+  hash,
+  PI,
+  TWO_PI
 } from 'three/tsl'
 import { MeshBasicNodeMaterial, DataTexture, RGBAFormat } from 'three/webgpu'
 
@@ -29,6 +33,7 @@ const dummyTexture = new DataTexture(
   RGBAFormat
 )
 
+export const orbitSpeed = uniform(0.05)
 export const videoTexture = uniform(dummyTexture)
 
 export const WallMaterial = new MeshBasicNodeMaterial()
@@ -41,25 +46,47 @@ const totalPlanes = int(4)
 const totalStories = int(7)
 const instancesPerPlaneX = div(instancesPerStory, totalPlanes)
 
+const getCurrentStory = Fn(() => {
+  return floor(div(float(instanceIndex), instancesPerStory))
+})
+
+const getMovementDirection = Fn(([currentStory]) => {
+  const direction = hash(currentStory.add(358))
+  direction.remapAssign(0, 1, -1, 1)
+
+  return direction
+})
+
+const getOrbitAngle = Fn(() => {
+  const currentStory = getCurrentStory()
+  const movementDirection = getMovementDirection(currentStory)
+
+  return time.mul(orbitSpeed).mul(movementDirection)
+})
+
+const getOrbitTurns = Fn(() => {
+  return getOrbitAngle().div(TWO_PI)
+})
+
 const sampleTexture = Fn(() => {
-  const currentStory = floor(div(float(instanceIndex), instancesPerStory))
-  const currentPlane = floor(div(float(instanceIndex), instancesPerPlaneX))
+  const currentStory = getCurrentStory()
   const currentInstancePerStory = mod(float(instanceIndex), instancesPerStory)
+  const orbitTurns = getOrbitTurns()
 
-  const x = div(mod(currentInstancePerStory, instancesPerPlaneX), instancesPerPlaneX)
+  // Ring phase (0..1) shared with orbit transform, then split into plane + in-plane X.
+  const ringPhase = currentInstancePerStory.div(instancesPerStory).add(orbitTurns)
+  const wrappedRingPhase = mod(ringPhase, 1)
+  const planePhase = wrappedRingPhase.mul(float(totalPlanes))
+  const currentPlane = floor(planePhase)
+  const x = mod(planePhase, 1)
   const y = div(currentStory, totalStories)
-
-  const direction = getMovementDirection(currentStory)
-  x.addAssign(direction.mul(time))
 
   return vec3(x, y, currentPlane)
 })
 
 const videoUV = Fn(() => {
   const sample = sampleTexture()
-
-  const uvOffsetX = sample.x
-  const uvCellX = uv().x.div(instancesPerPlaneX).add(uvOffsetX)
+  const uvCellX = uv().x.div(instancesPerPlaneX).add(sample.x)
 
   If(float(sample.z).mod(2).equal(0), () => {
     uvCellX.oneMinusAssign()
@@ -69,13 +96,6 @@ const videoUV = Fn(() => {
   const uvCellY = uv().y.div(totalStories).add(uvOffsetY)
 
   return vec2(uvCellX, uvCellY)
-})
-
-const getMovementDirection = Fn(([currentStory]) => {
-  const direction = hash(currentStory.add(358)).clamp(0.2, 0.8)
-  direction.remapAssign(0, 1, -1, 1)
-
-  return direction
 })
 
 const getScale = Fn(() => {
@@ -91,24 +111,44 @@ WallMaterial.uvNode = Fn(() => {
 })()
 
 WallMaterial.colorNode = Fn(() => {
+  const videoUv = videoUV()
+  // return videoUv
   // return sampleTexture().xy.toVec2()
   // return getScale()
 
-  return texture(videoTexture.value, videoUV())
+  return texture(videoTexture.value, videoUv)
 })()
 
 WallMaterial.positionNode = Fn(() => {
   const pos = positionLocal.toVar()
+  // return pos
 
   const instancePosition = attribute('instancePosition').toVec3()
-
-  const base = vec3(0.7)
-  const scale = getScale()
-  scale.assign(mx_noise_vec3(instancePosition.yxz.mul(0.35).add(time.mul(0.3)), 1))
-  pos.mulAssign(add(base, scale.mul(0.6)))
-
   const dirLocal = attribute('instanceDirectionLocal').toVec2()
-  pos.xz.subAssign(dirLocal.mul(scale.mul(0.4)))
+
+  const angle = getOrbitAngle()
+  const cosAngle = cos(angle)
+  const sinAngle = sin(angle)
+  const radius = instancePosition.xz.length()
+  const tangentLocal = vec2(dirLocal.y.mul(-1), dirLocal.x)
+
+  // Rotate the instance itself with the same phase as the orbit.
+  const localX = pos.x.toVar()
+  const localZ = pos.z.toVar()
+  pos.x.assign(localX.mul(cosAngle).sub(localZ.mul(sinAngle)))
+  pos.z.assign(localX.mul(sinAngle).add(localZ.mul(cosAngle)))
+
+  // const base = vec3(0.7)
+  // const scale = mx_noise_vec3(instancePosition.yxz.mul(0.35).add(time.mul(0.3)), 1)
+  // pos.mulAssign(add(base, scale.mul(0.6)))
+
+  // Local-space orbit delta around world center, built from radial+tangent basis.
+  const orbitDelta = dirLocal
+    .mul(cosAngle.sub(1).mul(radius))
+    .add(tangentLocal.mul(sinAngle.mul(radius)))
+  pos.xz.addAssign(orbitDelta)
+
+  // pos.xz.subAssign(dirLocal.mul(scale.mul(0.4)))
 
   return pos
 })()
