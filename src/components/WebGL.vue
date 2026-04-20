@@ -159,7 +159,7 @@ function createVideo() {
 	const video = document.createElement('video')
 	video.src = '/video.mp4'
 	video.autoplay = true
-	video.muted = false
+	video.muted = true
 	video.loop = true
 
 	video.play()
@@ -189,6 +189,8 @@ function createWall() {
 	const directionWorld = new THREE.Vector3()
 	const directionLocal = new THREE.Vector3()
 
+	const positionArray = new Float32Array(count * 3)
+
 	let i, j
 	for (i = 0; i < stories; i++) {
 		for (j = 0; j < meshesPerStory; j++) {
@@ -197,6 +199,10 @@ function createWall() {
 				i * 0.65,
 				Math.sin(gap * j) * 7,
 			)
+
+			positionArray[(i * meshesPerStory + j) * 3 + 0] = position.x
+			positionArray[(i * meshesPerStory + j) * 3 + 1] = position.y
+			positionArray[(i * meshesPerStory + j) * 3 + 2] = position.z
 
 			const rotation = new THREE.Quaternion().setFromAxisAngle(yAxis, -gap * j)
 
@@ -218,6 +224,12 @@ function createWall() {
 	}
 
 	mesh.instanceMatrix.needsUpdate = true
+
+	mesh.geometry.setAttribute(
+		'instancePosition',
+		new THREE.InstancedBufferAttribute(positionArray, 3),
+	)
+
 	mesh.geometry.setAttribute(
 		'instanceDirectionLocal',
 		new THREE.InstancedBufferAttribute(directionLocalArray, 2),
