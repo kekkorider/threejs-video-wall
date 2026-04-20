@@ -15,14 +15,13 @@ import {
   mod,
   vec2,
   vec3,
-  time,
-  luminance,
+  time,  luminance,
   positionLocal,
   attribute,
   mx_noise_vec3,
   hash,
-  PI,
-  TWO_PI
+  modelWorldMatrix,
+  TWO_PI,
 } from 'three/tsl'
 import { MeshBasicNodeMaterial, DataTexture, RGBAFormat } from 'three/webgpu'
 
@@ -33,7 +32,7 @@ const dummyTexture = new DataTexture(
   RGBAFormat
 )
 
-export const orbitSpeed = uniform(0.05)
+export const orbitSpeed = uniform(0.12)
 export const videoTexture = uniform(dummyTexture)
 
 export const WallMaterial = new MeshBasicNodeMaterial()
@@ -98,14 +97,6 @@ const videoUV = Fn(() => {
   return vec2(uvCellX, uvCellY)
 })
 
-const getScale = Fn(() => {
-  const sample = sampleTexture()
-  const tex0 = texture(videoTexture.value, sample.xy.toVec2())
-  const lum = luminance(tex0.xyz.toVec3(), 0.8)
-
-  return lum
-})
-
 WallMaterial.uvNode = Fn(() => {
   return videoUV()
 })()
@@ -121,7 +112,6 @@ WallMaterial.colorNode = Fn(() => {
 
 WallMaterial.positionNode = Fn(() => {
   const pos = positionLocal.toVar()
-  // return pos
 
   const instancePosition = attribute('instancePosition').toVec3()
   const dirLocal = attribute('instanceDirectionLocal').toVec2()
@@ -138,17 +128,17 @@ WallMaterial.positionNode = Fn(() => {
   pos.x.assign(localX.mul(cosAngle).sub(localZ.mul(sinAngle)))
   pos.z.assign(localX.mul(sinAngle).add(localZ.mul(cosAngle)))
 
-  // const base = vec3(0.7)
-  // const scale = mx_noise_vec3(instancePosition.yxz.mul(0.35).add(time.mul(0.3)), 1)
-  // pos.mulAssign(add(base, scale.mul(0.6)))
+  const instancePositionWorld = modelWorldMatrix.mul(instancePosition)
+
+  const base = vec3(0.8)
+  const scale = mx_noise_vec3(instancePositionWorld.mul(0.5).add(time.mul(0.3)), 1)
+  pos.mulAssign(add(base, scale.xxx.mul(0.2)))
 
   // Local-space orbit delta around world center, built from radial+tangent basis.
   const orbitDelta = dirLocal
     .mul(cosAngle.sub(1).mul(radius))
     .add(tangentLocal.mul(sinAngle.mul(radius)))
   pos.xz.addAssign(orbitDelta)
-
-  // pos.xz.subAssign(dirLocal.mul(scale.mul(0.4)))
 
   return pos
 })()
