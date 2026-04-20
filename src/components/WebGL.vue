@@ -95,7 +95,7 @@ onMounted(async () => {
 		perfPanel?.end()
 	})
 
-	if (true) {
+	if (isDebug.value) {
 		await import('@/assets/Debug')
 
 		if (!renderer.isWebGPURenderer) {
