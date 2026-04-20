@@ -16,6 +16,8 @@ import {
 	get,
 } from '@vueuse/core'
 import * as THREE from 'three/webgpu'
+import { pass } from 'three/tsl'
+import { radialBlur } from 'three/addons/tsl/display/radialBlur'
 import { OrbitControls } from 'three/addons/controls/OrbitControls'
 
 import { useGSAP } from '@/composables/useGSAP'
@@ -24,6 +26,13 @@ import { WaterMesh } from '@/assets/WaterMesh'
 import { textureLoader } from '@/assets/loaders'
 
 import { EVENTS } from '@/constants'
+
+import {
+	weight as radialBlurWeight,
+	decay as radialBlurDecay,
+	exposure as radialBlurExposure,
+	count as radialBlurCount,
+} from '@/assets/postprocess/radialBlur'
 
 const canvasRef = useTemplateRef('canvas')
 let perfPanel,
@@ -34,7 +43,8 @@ let perfPanel,
 	controls,
 	floorMesh,
 	ceilingMesh,
-	video
+	video,
+	renderPipeline
 
 const cameraStartPos = new THREE.Vector3(0, 28, 0)
 const cameraFinalPos = new THREE.Vector3(0, 2, 2)
@@ -71,6 +81,7 @@ onMounted(async () => {
 	createWall()
 	createFloor()
 	isDebug.value && createControls()
+	createPostprocess()
 
 	gsap.ticker.fps(60)
 
@@ -78,12 +89,13 @@ onMounted(async () => {
 		perfPanel?.begin()
 
 		updateScene(time)
-		renderer.render(scene, camera)
+		// renderer.render(scene, camera)
+		renderPipeline.render()
 
 		perfPanel?.end()
 	})
 
-	if (isDebug.value) {
+	if (true) {
 		await import('@/assets/Debug')
 
 		if (!renderer.isWebGPURenderer) {
@@ -184,7 +196,11 @@ async function loadTextures() {
 
 function createControls() {
 	controls = new OrbitControls(camera, renderer.domElement)
-	controls.target.set(cameraTargetFinalPos)
+	controls.target.set(
+		cameraTargetFinalPos.x,
+		cameraTargetFinalPos.y,
+		cameraTargetFinalPos.z,
+	)
 	controls.enableDamping = true
 	controls.minPolarAngle = Math.PI / 2
 	controls.maxPolarAngle = Math.PI / 2
@@ -302,6 +318,21 @@ function createFloor() {
 
 	scene.add(floorMesh)
 	scene.add(ceilingMesh)
+}
+
+function createPostprocess() {
+	renderPipeline = new THREE.RenderPipeline(renderer)
+
+	const scenePass = pass(scene, camera)
+
+	const blurPass = radialBlur(scenePass, {
+		weight: radialBlurWeight.value,
+		decay: radialBlurDecay.value,
+		exposure: radialBlurExposure.value,
+		count: radialBlurCount.value,
+	})
+
+	renderPipeline.outputNode = blurPass
 }
 
 function animateIn() {
