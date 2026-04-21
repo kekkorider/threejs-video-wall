@@ -15,7 +15,7 @@ import {
   mod,
   vec2,
   vec3,
-  time,  luminance,
+  time,
   positionLocal,
   attribute,
   mx_noise_vec3,
@@ -32,8 +32,9 @@ const dummyTexture = new DataTexture(
   RGBAFormat
 )
 
-export const orbitSpeed = uniform(0.12)
-export const videoTexture = uniform(dummyTexture)
+export const orbitSpeed = uniform(0)
+export const startTexture = uniform(dummyTexture.clone())
+export const videoTexture = uniform(dummyTexture.clone())
 
 export const WallMaterial = new MeshBasicNodeMaterial()
 WallMaterial.name = 'Wall material'
@@ -103,6 +104,9 @@ WallMaterial.uvNode = Fn(() => {
 
 WallMaterial.colorNode = Fn(() => {
   const videoUv = videoUV()
+  videoUv.x.addAssign(1)
+  videoUv.y.addAssign(time.mul(0.12))
+  return texture(startTexture.value, videoUv)
   // return videoUv
   // return sampleTexture().xy.toVec2()
   // return getScale()

@@ -21,7 +21,11 @@ import { radialBlur } from 'three/addons/tsl/display/radialBlur'
 import { OrbitControls } from 'three/addons/controls/OrbitControls'
 
 import { useGSAP } from '@/composables/useGSAP'
-import { WallMaterial, videoTexture } from '@/assets/materials/WallMaterial'
+import {
+	WallMaterial,
+	videoTexture,
+	startTexture,
+} from '@/assets/materials/WallMaterial'
 import { WaterMesh } from '@/assets/WaterMesh'
 import { textureLoader } from '@/assets/loaders'
 
@@ -89,7 +93,6 @@ onMounted(async () => {
 		perfPanel?.begin()
 
 		updateScene(time)
-		// renderer.render(scene, camera)
 		renderPipeline.render()
 
 		perfPanel?.end()
@@ -185,13 +188,20 @@ async function loadTextures() {
 	const result = await textureLoader.load([
 		'/Water_1_M_Normal.jpg',
 		'/Water_2_M_Normal.jpg',
+		'/no-signal.webp',
 	])
 
 	result[0].wrapS = result[0].wrapT = THREE.RepeatWrapping
 	result[1].wrapS = result[1].wrapT = THREE.RepeatWrapping
 
+	result[2].wrapT = THREE.RepeatWrapping
+	result[2].colorSpace = THREE.SRGBColorSpace
+
 	textures.set('waterNormalMap0', result[0])
 	textures.set('waterNormalMap1', result[1])
+	textures.set('noSignal', result[2])
+
+	startTexture.value = textures.get('noSignal')
 }
 
 function createControls() {
@@ -210,7 +220,7 @@ function createVideo() {
 	video = document.createElement('video')
 	video.src = '/video.mp4'
 	video.autoplay = false
-	video.muted = false
+	video.muted = true
 	video.loop = true
 
 	// video.play()
