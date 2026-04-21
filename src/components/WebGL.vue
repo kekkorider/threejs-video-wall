@@ -52,7 +52,7 @@ let perfPanel,
 	renderPipeline
 
 const cameraStartPos = new THREE.Vector3(0, 28, 0)
-const cameraFinalPos = new THREE.Vector3(0, 2, 2)
+const cameraFinalPos = new THREE.Vector3(0, 2, 0)
 
 const cameraTargetStartPos = new THREE.Vector3(0, 0, 0)
 const cameraTargetFinalPos = new THREE.Vector3(0, 2, -2)
@@ -212,6 +212,8 @@ function createControls() {
 		cameraTargetFinalPos.y,
 		cameraTargetFinalPos.z,
 	)
+
+	controls.enablePan = false
 	controls.enableDamping = true
 	controls.minPolarAngle = Math.PI / 2
 	controls.maxPolarAngle = Math.PI / 2
@@ -384,7 +386,7 @@ function animateIn() {
 				video.play()
 			},
 		},
-		'start+=1.5',
+		'start+=1',
 	)
 
 	tl.fromTo(
@@ -394,7 +396,7 @@ function animateIn() {
 		},
 		{
 			value: 1,
-			duration: 1.3,
+			duration: 1.7,
 			ease: 'power2.out',
 		},
 		'>0.7',

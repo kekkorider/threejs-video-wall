@@ -1,8 +1,42 @@
+:root {
+	--color-A: #1a334a;
+	--color-B: #1e536e;
+	--color-C: #18a3b7;
+	--color-D: #27e6ec;
+	--color-E: #5aa5cd;
+	--color-F: #6f71a1;
+
+	--font-primary: 'Earth Orbiter Condensed';
+}
+
 body {
 	margin: 0;
 	overflow: hidden;
 	padding: 0;
 	background-color: #010101;
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	font-size: 14px;
+	color: white;
+}
+
+@font-face {
+	font-family: 'Neuropol';
+	src:
+		url('/fonts/Neuropol-Regular.woff2') format('woff2'),
+		url('/fonts/Neuropol-Regular.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Earth Orbiter Condensed';
+	src:
+		url('/fonts/EarthOrbiterCondensed.woff2') format('woff2'),
+		url('/fonts/EarthOrbiterCondensed.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
 }
 
 p {
