@@ -114,13 +114,9 @@ onMounted(async () => {
 		}
 	}
 
-	window.addEventListener(
-		EVENTS.ANIMATE_IN,
-		() => {
-			animateIn()
-		},
-		{ once: true },
-	)
+	window.addEventListener(EVENTS.ANIMATE_IN, () => {
+		animateIn()
+	})
 })
 
 //
@@ -224,9 +220,11 @@ function createVideo() {
 	video.src = '/video.mp4'
 	video.autoplay = false
 	video.muted = false
-	video.loop = true
+	video.loop = false
 
-	// video.play()
+	video.addEventListener('ended', () => {
+		animateOut()
+	})
 
 	const texture = new THREE.VideoTexture(video)
 	texture.colorSpace = THREE.SRGBColorSpace
@@ -383,6 +381,7 @@ function animateIn() {
 			duration: 3.2,
 			ease: 'power2.inOut',
 			onComplete: () => {
+				video.currentTime = 0
 				video.play()
 			},
 		},
@@ -400,6 +399,49 @@ function animateIn() {
 			ease: 'power2.out',
 		},
 		'>0.7',
+	)
+}
+
+function animateOut() {
+	const tl = gsap.timeline({
+		onComplete: () => {
+			window.dispatchEvent(new CustomEvent(EVENTS.RESET))
+		},
+	})
+	tl.addLabel('start')
+
+	tl.to(
+		videoMaskProgress,
+		{
+			value: 0,
+			duration: 1.5,
+			ease: 'sine.out',
+		},
+		'start',
+	)
+
+	tl.to(
+		camera.position,
+		{
+			x: cameraStartPos.x,
+			y: cameraStartPos.y,
+			z: cameraStartPos.z,
+			duration: 3.2,
+			ease: 'sine.inOut',
+		},
+		'start+=0.5',
+	)
+
+	tl.to(
+		cameraTarget,
+		{
+			x: cameraTargetStartPos.x,
+			y: cameraTargetStartPos.y,
+			z: cameraTargetStartPos.z,
+			duration: 3.2,
+			ease: 'sine.inOut',
+		},
+		'start+=0.5',
 	)
 }
 </script>

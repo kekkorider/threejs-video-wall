@@ -3,7 +3,7 @@
 		<WebGL class="webgl" />
 
 		<div class="controls" ref="controlsRef">
-			<button class="btn" @click.once="start">Start</button>
+			<button class="btn" @click="start" ref="startBtnRef">Start</button>
 		</div>
 
 		<div class="panel">
@@ -42,17 +42,26 @@
 </template>
 
 <script setup>
-import { shallowRef } from 'vue'
+import { onMounted, shallowRef } from 'vue'
 
 import { EVENTS } from '@/constants'
 import WebGL from '@/components/WebGL.vue'
 import { useGSAP } from '@/composables/useGSAP'
 
 const controlsRef = shallowRef(null)
+const startBtnRef = shallowRef(null)
 
 const { gsap } = useGSAP()
 
+onMounted(() => {
+	window.addEventListener(EVENTS.RESET, () => {
+		reset()
+	})
+})
+
 function start() {
+	startBtnRef.value.disabled = true
+
 	const tl = gsap.timeline()
 	tl.addLabel('start')
 
@@ -67,6 +76,20 @@ function start() {
 	)
 
 	window.dispatchEvent(new CustomEvent(EVENTS.ANIMATE_IN))
+}
+
+function reset() {
+	startBtnRef.value.disabled = false
+
+	gsap.to(
+		controlsRef.value,
+		{
+			opacity: 1,
+			duration: 1,
+			ease: 'power2.out',
+		},
+		'start',
+	)
 }
 </script>
 
@@ -118,7 +141,11 @@ function start() {
 .panel {
 	place-self: end start;
 	padding: 20px;
-	width: clamp(200px, 50%, 400px);
+	width: 100%;
+
+	@media (min-width: 640px) {
+		width: clamp(200px, 50%, 400px);
+	}
 
 	.inner {
 		display: grid;

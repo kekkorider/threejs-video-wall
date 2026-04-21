@@ -9,6 +9,10 @@
 	--font-primary: 'Earth Orbiter Condensed';
 }
 
+* {
+	box-sizing: border-box;
+}
+
 body {
 	margin: 0;
 	overflow: hidden;
