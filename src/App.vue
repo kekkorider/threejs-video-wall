@@ -6,7 +6,7 @@
 			<button class="btn" @click="start" ref="startBtnRef">Start</button>
 		</div>
 
-		<div class="panel">
+		<div class="panel" hidden>
 			<div class="inner">
 				<h1>ThreeJS music wall</h1>
 
