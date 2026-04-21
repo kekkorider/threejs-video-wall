@@ -1,6 +1,6 @@
 import { Pane } from 'tweakpane'
 
-import { orbitSpeed } from '@/assets/materials/WallMaterial'
+import { orbitSpeed, videoMaskProgress } from '@/assets/materials/WallMaterial'
 
 import {
 	weight as radialBlurWeight,
@@ -14,6 +14,7 @@ const pane = new Pane({
 })
 
 pane.addBinding(orbitSpeed, 'value', { label: 'Orbit speed', min: 0, max: 1, step: 0.01 })
+pane.addBinding(videoMaskProgress, 'value', { label: 'Video mask', min: 0, max: 1, step: 0.01 })
 
 {
   const folder = pane.addFolder({ title: 'Postprocess - Radial blur' })

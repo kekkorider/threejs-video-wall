@@ -25,6 +25,7 @@ import {
 	WallMaterial,
 	videoTexture,
 	startTexture,
+	videoMaskProgress,
 } from '@/assets/materials/WallMaterial'
 import { WaterMesh } from '@/assets/WaterMesh'
 import { textureLoader } from '@/assets/loaders'
@@ -194,7 +195,7 @@ async function loadTextures() {
 	result[0].wrapS = result[0].wrapT = THREE.RepeatWrapping
 	result[1].wrapS = result[1].wrapT = THREE.RepeatWrapping
 
-	result[2].wrapT = THREE.RepeatWrapping
+	result[2].wrapS = THREE.RepeatWrapping
 	result[2].colorSpace = THREE.SRGBColorSpace
 
 	textures.set('waterNormalMap0', result[0])
@@ -220,7 +221,7 @@ function createVideo() {
 	video = document.createElement('video')
 	video.src = '/video.mp4'
 	video.autoplay = false
-	video.muted = true
+	video.muted = false
 	video.loop = true
 
 	// video.play()
@@ -377,13 +378,26 @@ function animateIn() {
 			x: cameraTargetFinalPos.x,
 			y: cameraTargetFinalPos.y,
 			z: cameraTargetFinalPos.z,
-			duration: 1.7,
+			duration: 3.2,
 			ease: 'power2.inOut',
-			onStart: () => {
+			onComplete: () => {
 				video.play()
 			},
 		},
-		'start+=2',
+		'start+=1.5',
+	)
+
+	tl.fromTo(
+		videoMaskProgress,
+		{
+			value: 0,
+		},
+		{
+			value: 1,
+			duration: 1.3,
+			ease: 'power2.out',
+		},
+		'>0.7',
 	)
 }
 </script>

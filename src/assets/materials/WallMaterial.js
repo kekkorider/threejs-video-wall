@@ -8,8 +8,10 @@ import {
   texture,
   instanceIndex,
   add,
+  sub,
   div,
   int,
+  mix,
   float,
   floor,
   mod,
@@ -32,9 +34,10 @@ const dummyTexture = new DataTexture(
   RGBAFormat
 )
 
-export const orbitSpeed = uniform(0)
+export const orbitSpeed = uniform(0.12)
 export const startTexture = uniform(dummyTexture.clone())
 export const videoTexture = uniform(dummyTexture.clone())
+export const videoMaskProgress = uniform(0)
 
 export const WallMaterial = new MeshBasicNodeMaterial()
 WallMaterial.name = 'Wall material'
@@ -84,11 +87,11 @@ const sampleTexture = Fn(() => {
   return vec3(x, y, currentPlane)
 })
 
-const videoUV = Fn(() => {
+const videoUV = Fn(([mirror = false]) => {
   const sample = sampleTexture()
   const uvCellX = uv().x.div(instancesPerPlaneX).add(sample.x)
 
-  If(float(sample.z).mod(2).equal(0), () => {
+  If(float(sample.z).mod(2).equal(0).and(mirror), () => {
     uvCellX.oneMinusAssign()
   })
 
@@ -98,20 +101,35 @@ const videoUV = Fn(() => {
   return vec2(uvCellX, uvCellY)
 })
 
+const videoMask = Fn(() => {
+  const maskUv = videoUV().toVar()
+  maskUv.y.subAssign(0.5)
+  maskUv.y.mulAssign(2)
+  maskUv.y.absAssign()
+  maskUv.y.smoothstepAssign(videoMaskProgress, sub(videoMaskProgress, 0.02).max(-0.01))
+
+  return maskUv.y
+})
+
 WallMaterial.uvNode = Fn(() => {
-  return videoUV()
+  return videoUV(true)
 })()
 
 WallMaterial.colorNode = Fn(() => {
-  const videoUv = videoUV()
-  videoUv.x.addAssign(1)
-  videoUv.y.addAssign(time.mul(0.12))
-  return texture(startTexture.value, videoUv)
-  // return videoUv
-  // return sampleTexture().xy.toVec2()
-  // return getScale()
+  const mask = videoMask()
+  // return mask
 
-  return texture(videoTexture.value, videoUv)
+  const introUv = videoUV()
+  introUv.x.addAssign(time.mul(0.081))
+  introUv.y.subAssign(1)
+  const introTexture = texture(startTexture.value, introUv)
+
+  const videoUv = videoUV(true)
+  const video = texture(videoTexture.value, videoUv)
+
+  const final = mix(introTexture, video, mask)
+
+  return final
 })()
 
 WallMaterial.positionNode = Fn(() => {
