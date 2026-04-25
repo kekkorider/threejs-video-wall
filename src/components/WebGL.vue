@@ -19,6 +19,7 @@ import * as THREE from 'three/webgpu'
 import { pass } from 'three/tsl'
 import { radialBlur } from 'three/addons/tsl/display/radialBlur'
 import { OrbitControls } from 'three/addons/controls/OrbitControls'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry'
 
 import { useGSAP } from '@/composables/useGSAP'
 import {
@@ -38,6 +39,8 @@ import {
 	exposure as radialBlurExposure,
 	count as radialBlurCount,
 } from '@/assets/postprocess/radialBlur'
+
+import { createAO } from '@/assets/postprocess/ao'
 
 const canvasRef = useTemplateRef('canvas')
 let perfPanel,
@@ -219,7 +222,7 @@ function createVideo() {
 	video = document.createElement('video')
 	video.src = '/video.mp4'
 	video.autoplay = false
-	video.muted = false
+	video.muted = true
 	video.loop = false
 
 	video.addEventListener('ended', () => {
@@ -234,7 +237,7 @@ function createVideo() {
 }
 
 function createWall() {
-	const geometry = new THREE.BoxGeometry()
+	const geometry = new RoundedBoxGeometry(1, 1, 1, 2, 0.1)
 	geometry.scale(0.6, 0.6, 0.6)
 	const material = WallMaterial
 
@@ -334,9 +337,9 @@ function createFloor() {
 function createPostprocess() {
 	renderPipeline = new THREE.RenderPipeline(renderer)
 
-	const scenePass = pass(scene, camera)
+	const aoPass = createAO(scene, camera)
 
-	const blurPass = radialBlur(scenePass, {
+	const blurPass = radialBlur(aoPass.getTextureNode(), {
 		weight: radialBlurWeight.value,
 		decay: radialBlurDecay.value,
 		exposure: radialBlurExposure.value,
